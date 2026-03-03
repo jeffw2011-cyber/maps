@@ -1,0 +1,7 @@
+{
+  "name": "AI Explorador de Mapas ",
+  "description": "Chatbot interativo com dados em tempo real do Google Maps e tradução para português.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
