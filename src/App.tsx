@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Loader2, Compass, Navigation, MapPin, History, Star, Trash2, X, Search } from 'lucide-react';
+import { Send, MessageSquare, Loader2, Compass, Navigation, MapPin, History, Star, Trash2, X, Search, Share2, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import { clsx, type ClassValue } from 'clsx';
@@ -29,6 +29,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,11 +44,32 @@ export default function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      setShowInstallGuide(true);
+      return;
+    }
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Explorador AI',
+          text: 'Confira este assistente de viagens inteligente!',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      // Fallback: copiar para área de transferência
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copiado para a área de transferência!');
     }
   };
 
@@ -126,14 +148,25 @@ export default function App() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {deferredPrompt && (
-            <button
-              onClick={handleInstallClick}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100 animate-pulse"
-            >
-              Instalar App
-            </button>
-          )}
+          <button
+            onClick={handleShare}
+            className="p-2 rounded-xl hover:bg-stone-100 text-stone-600 transition-colors active:bg-stone-200"
+            title="Compartilhar App"
+          >
+            <Share2 size={20} />
+          </button>
+          <button
+            onClick={handleInstallClick}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border transition-all",
+              deferredPrompt 
+                ? "bg-emerald-50 text-emerald-700 border-emerald-100 animate-pulse" 
+                : "bg-stone-50 text-stone-500 border-stone-200"
+            )}
+          >
+            <Smartphone size={14} />
+            {deferredPrompt ? "Instalar" : "Como Instalar"}
+          </button>
           <button
             onClick={() => setIsHistoryOpen(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-stone-100 text-stone-600 transition-colors active:bg-stone-200"
@@ -148,6 +181,53 @@ export default function App() {
       <main className="flex-1 flex flex-col overflow-hidden relative max-w-4xl mx-auto w-full">
         {/* History Sidebar/Overlay */}
         <AnimatePresence>
+          {showInstallGuide && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowInstallGuide(false)}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-stone-800">Como Instalar</h3>
+                    <button onClick={() => setShowInstallGuide(false)} className="text-stone-400 hover:text-stone-600">
+                      <X size={24} />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex gap-4 items-start">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">1</div>
+                      <p className="text-stone-600 text-sm">Abra este link no <b>Google Chrome</b> do seu Android.</p>
+                    </div>
+                    <div className="flex gap-4 items-start">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">2</div>
+                      <p className="text-stone-600 text-sm">Toque nos <b>três pontinhos (⋮)</b> no canto superior direito.</p>
+                    </div>
+                    <div className="flex gap-4 items-start">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">3</div>
+                      <p className="text-stone-600 text-sm">Selecione <b>"Instalar aplicativo"</b> ou <b>"Adicionar à tela inicial"</b>.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowInstallGuide(false)}
+                    className="w-full mt-8 bg-emerald-600 text-white py-3 rounded-2xl font-bold shadow-lg shadow-emerald-200 active:scale-95 transition-transform"
+                  >
+                    Entendi!
+                  </button>
+                </motion.div>
+              </motion.div>
+            </>
+          )}
+
           {isHistoryOpen && (
             <>
               <motion.div
